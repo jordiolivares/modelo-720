@@ -171,6 +171,7 @@ impl AssetWithValuation for &'_ Rc<dyn AssetWithValuation> {
 
 #[derive(Default)]
 pub struct Portfolio {
+    // TODO: This should definitely be private
     pub assets: Vec<Rc<dyn AssetWithValuation>>,
 }
 

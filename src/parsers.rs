@@ -41,7 +41,6 @@ struct MintosStatementEntry {
     isin: String,
     #[serde(rename = "Outstanding Principal")]
     pending_principal: Decimal,
-    // acquisition_date: NaiveDate,
 }
 
 pub fn parse_mintos_statement(path: &Path) -> std::io::Result<Portfolio> {
@@ -51,7 +50,6 @@ pub fn parse_mintos_statement(path: &Path) -> std::io::Result<Portfolio> {
         let mintos_entry: MintosStatementEntry = row?;
         assets.push(Rc::new(MintosNote {
             description: format!("MINTOS NOTE {}", mintos_entry.isin),
-            // acquisition_date: mintos_entry.acquisition_date,
             isin: mintos_entry.isin,
             euro_valuation: mintos_entry.pending_principal,
             deposit_country: "LV".to_string(),

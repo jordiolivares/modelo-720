@@ -117,8 +117,8 @@ impl Serialize for Modelo720Date {
         S: serde::Serializer,
     {
         match &self.0 {
-            Some(v) => serializer.serialize_str(v.format("%Y%m%d").to_string().as_str()),
-            None => serializer.serialize_bytes(&[]),
+            Some(v) => serializer.serialize_some(v.format("%Y%m%d").to_string().as_str()),
+            None => serializer.serialize_none(), // This will output 00000000 into the file.
         }
     }
 }
@@ -148,6 +148,7 @@ impl<'de> Visitor<'de> for Modelo720DateVisitor {
         E: de::Error,
     {
         if v == "00000000" {
+            // Result from serializing a None, the date is invalid anyways so it's treated as a special value.
             Ok(None)
         } else {
             NaiveDate::parse_from_str(v, "%Y%m%d")
@@ -265,6 +266,7 @@ impl Registro1Modelo720 {
     }
 }
 
+// TODO: Reorganize constructor so it is less reliant on magic chars
 #[derive(Clone, Deserialize, Serialize, Debug, FixedWidth)]
 pub struct Registro2Modelo720 {
     #[fixed_width(range = "0..1")]
@@ -477,6 +479,7 @@ impl Registro2Modelo720 {
 }
 
 pub struct Modelo720 {
+    // TODO: These should definitely be private
     pub header: Registro1Modelo720,
     pub entries: Vec<Registro2Modelo720>,
 }
