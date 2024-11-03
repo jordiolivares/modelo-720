@@ -108,9 +108,17 @@ pub fn asset_difference(
 pub struct MintosNote {
     pub isin: String,
     pub euro_valuation: Decimal,
-    // acquisition_date: NaiveDate,
-    pub deposit_country: String,
-    pub description: String,
+    description: String,
+}
+
+impl MintosNote {
+    pub fn new(isin: String, euro_valuation: Decimal) -> MintosNote {
+        MintosNote {
+            description: format!("MINTOS NOTE {}", isin),
+            isin,
+            euro_valuation,
+        }
+    }
 }
 
 impl AssetWithValuation for MintosNote {
@@ -128,7 +136,7 @@ impl AssetWithValuation for MintosNote {
     }
 
     fn country_of_deposit(&self) -> &str {
-        &self.deposit_country
+        "LV"
     }
 
     fn description(&self) -> &str {
