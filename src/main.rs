@@ -9,7 +9,6 @@ use modelo_720_rust::{
     modelo::{Modelo720, Shares},
     parsers::{parse_ibkr_statement, parse_mintos_statement, SupportedBrokers},
 };
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
 struct FullJoinIterator<I: Iterator> {
@@ -108,7 +107,7 @@ fn compute_modelo720(
                 let mut registro = acquisition.modelo_720_registro(ejercicio, nif, name);
                 registro.origen_bien_derecho = Some('A');
                 registro.numero_valores = Some(acquisition.shares());
-                registro.valoracion1 = Some(acquisition.valuation_as_cents());
+                registro.valoracion1 = acquisition.valuation().into();
                 vec![registro]
             }
             PortfolioChange::Changed(new_value, old_value) => {
@@ -120,21 +119,13 @@ fn compute_modelo720(
                     let mut previous_registro = old_value.modelo_720_registro(ejercicio, nif, name);
                     previous_registro.origen_bien_derecho = Some('M');
                     previous_registro.numero_valores = Some(old_value.shares());
-                    Some(old_value.shares_as_cents());
-                    previous_registro.valoracion1 = (old_value.shares().0
-                        * current_price_per_share
-                        * Decimal::new(100, 0))
-                    .round_dp_with_strategy(0, rust_decimal::RoundingStrategy::MidpointAwayFromZero)
-                    .to_i64();
+                    previous_registro.valoracion1 =
+                        (old_value.shares().0 * current_price_per_share).into();
 
                     let mut new_registro = new_value.modelo_720_registro(ejercicio, nif, name);
                     new_registro.origen_bien_derecho = Some('A');
                     new_registro.numero_valores = Some(diff.shares);
-                    new_registro.valoracion1 = (diff.shares.0
-                        * current_price_per_share
-                        * Decimal::new(100, 0))
-                    .round_dp_with_strategy(0, rust_decimal::RoundingStrategy::MidpointAwayFromZero)
-                    .to_i64();
+                    new_registro.valoracion1 = (diff.shares.0 * current_price_per_share).into();
 
                     vec![previous_registro, new_registro]
                 } else if diff.shares.0 == Decimal::ZERO {
@@ -151,10 +142,8 @@ fn compute_modelo720(
                     sale_registro.origen_bien_derecho = Some('C');
                     sale_registro.numero_valores = Some(Shares(diff.shares.0.abs()));
                     sale_registro.valoracion1 = (sale_registro.numero_valores.unwrap().0.abs()
-                        * current_price_per_share
-                        * Decimal::new(100, 0))
-                    .round_dp_with_strategy(0, rust_decimal::RoundingStrategy::MidpointAwayFromZero)
-                    .to_i64();
+                        * current_price_per_share)
+                        .into();
                     vec![current_registro, sale_registro]
                 }
             }

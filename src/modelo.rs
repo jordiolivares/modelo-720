@@ -1,4 +1,7 @@
+use std::iter::Sum;
+use std::ops::AddAssign;
 use std::path::Path;
+use std::str::FromStr;
 use std::{fs::File, io::Write};
 
 use chrono::NaiveDate;
@@ -8,6 +11,98 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use serde::de::Visitor;
 use serde::{de, Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug)]
+pub struct Modelo720Number<const NUMBERS: usize>(Decimal);
+
+impl<const N: usize> Modelo720Number<N> {
+    pub fn rounded_to_cents(&self) -> Self {
+        Modelo720Number(
+            self.0
+                .round_dp_with_strategy(2, rust_decimal::RoundingStrategy::MidpointAwayFromZero),
+        )
+    }
+}
+
+impl<const N: usize> From<Decimal> for Modelo720Number<N> {
+    fn from(value: Decimal) -> Self {
+        Self(value)
+    }
+}
+
+impl<const N: usize> AddAssign for Modelo720Number<N> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0
+    }
+}
+
+impl<const N: usize> Sum for Modelo720Number<N> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        let mut res = Modelo720Number(Decimal::ZERO);
+        for x in iter {
+            res += x;
+        }
+        res
+    }
+}
+
+impl<const N: usize> Serialize for Modelo720Number<N> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let decimal_cents = self.rounded_to_cents().0;
+        let sign = {
+            if decimal_cents.is_sign_negative() {
+                'N'
+            } else {
+                ' '
+            }
+        };
+        let number = (decimal_cents.abs() * Decimal::from(100)).to_i64().unwrap();
+        let string = format!("{sign}{number:0>width$}", width = N - 1);
+        serializer.serialize_str(&string)
+    }
+}
+
+struct Modelo720NumberVisitor<const N: usize>;
+
+impl<'de, const N: usize> Visitor<'de> for Modelo720NumberVisitor<N> {
+    type Value = Modelo720Number<N>;
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        let (sign, number) = {
+            if v.len() == N {
+                v.split_at(1)
+            } else {
+                (" ", v)
+            }
+        };
+        let decimal = Decimal::from_str(number);
+        let res = decimal
+            .map(|n| if sign == " " { n } else { -n })
+            .map(|n| n / Decimal::from(100))
+            .map(Modelo720Number);
+        res.map_err(|e| de::Error::custom(e.to_string()))
+    }
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("Expected a valid number")
+    }
+}
+
+impl<'de, const N: usize> Deserialize<'de> for Modelo720Number<N> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let visitor: Modelo720NumberVisitor<N> = Modelo720NumberVisitor;
+        deserializer.deserialize_str(visitor)
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Shares(pub Decimal);
@@ -20,7 +115,7 @@ impl Serialize for Shares {
         let rounded_to_cents = self
             .0
             .round_dp_with_strategy(2, rust_decimal::RoundingStrategy::MidpointAwayFromZero);
-        serializer.serialize_i64((rounded_to_cents * Decimal::new(100, 0)).to_i64().unwrap())
+        serializer.serialize_i64((rounded_to_cents * Decimal::from(100)).to_i64().unwrap())
     }
 }
 
@@ -217,25 +312,11 @@ pub struct Registro1Modelo720 {
     )]
     numero_registros_tipo2: usize,
 
-    #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 1 (SIGNO)", range = "144..145")]
-    valoracion_1_negativa: char,
-    #[fixed_width(
-        name = "SUMA TOTAL DE VALORACIÓN 1",
-        range = "145..162",
-        justify = "right",
-        pad_with = "0"
-    )]
-    suma_valoracion1: i64,
+    #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 1", range = "144..162")]
+    suma_valoracion1: Modelo720Number<{ 162 - 144 }>,
 
-    #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 2 (SIGNO)", range = "162..163")]
-    valoracion_2_negativa: char,
-    #[fixed_width(
-        name = "SUMA TOTAL DE VALORACIÓN 2",
-        range = "163..180",
-        justify = "right",
-        pad_with = "0"
-    )]
-    suma_valoracion2: i64,
+    #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 2", range = "162..180")]
+    suma_valoracion2: Modelo720Number<{ 180 - 162 }>,
 
     #[fixed_width(name = "BLANCOS", range = "180..500")]
     blancos: String,
@@ -257,10 +338,8 @@ impl Registro1Modelo720 {
             declaracion_sustitutiva: None,
             id_declaracion_anterior: None,
             numero_registros_tipo2: 0,
-            valoracion_1_negativa: ' ',
-            suma_valoracion1: 0,
-            valoracion_2_negativa: ' ',
-            suma_valoracion2: 0,
+            suma_valoracion1: Modelo720Number(Decimal::ZERO),
+            suma_valoracion2: Modelo720Number(Decimal::ZERO),
             blancos: String::default(),
         }
     }
@@ -387,25 +466,11 @@ pub struct Registro2Modelo720 {
     )]
     pub fecha_extincion: Modelo720Date,
 
-    #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 1 (SIGNO)", range = "431..432")]
-    pub valoracion_1_negativa: char,
-    #[fixed_width(
-        name = "Valoracion 1",
-        range = "432..446",
-        justify = "right",
-        pad_with = "0"
-    )]
-    pub valoracion1: Option<i64>,
+    #[fixed_width(name = "Valoracion 1", range = "431..446")]
+    pub valoracion1: Modelo720Number<{ 446 - 431 }>,
 
-    #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 1 (SIGNO)", range = "446..447")]
-    pub valoracion_2_negativa: char,
-    #[fixed_width(
-        name = "Valoracion 2",
-        range = "447..461",
-        justify = "right",
-        pad_with = "0"
-    )]
-    pub valoracion2: Option<i64>,
+    #[fixed_width(name = "Valoracion 2", range = "446..461")]
+    pub valoracion2: Modelo720Number<{ 461 - 446 }>,
 
     #[fixed_width(name = "CLAVE DE REPRESENTACIÓN DE VALORES", range = "461..462")]
     pub clave_representacion_valores: Option<char>,
@@ -465,10 +530,8 @@ impl Registro2Modelo720 {
             fecha_incorporacion: Modelo720Date(None),
             origen_bien_derecho: None,
             fecha_extincion: Modelo720Date(None),
-            valoracion_1_negativa: ' ',
-            valoracion1: None,
-            valoracion_2_negativa: ' ',
-            valoracion2: None,
+            valoracion1: Modelo720Number(Decimal::ZERO),
+            valoracion2: Modelo720Number(Decimal::ZERO),
             clave_representacion_valores: None,
             numero_valores: None,
             clave_tipo_bien_inmueble: None,
@@ -478,6 +541,7 @@ impl Registro2Modelo720 {
     }
 }
 
+#[derive(Debug)]
 pub struct Modelo720 {
     // TODO: These should definitely be private
     pub header: Registro1Modelo720,
@@ -502,16 +566,22 @@ impl Modelo720 {
             entries,
         };
         result.header.numero_registros_tipo2 = result.entries.len();
-        result.header.suma_valoracion1 = result
-            .entries
-            .iter()
-            .map(|x| x.valoracion1.unwrap_or_default())
-            .sum();
-        result.header.suma_valoracion2 = result
-            .entries
-            .iter()
-            .map(|x| x.valoracion2.unwrap_or_default())
-            .sum();
+        result.header.suma_valoracion1 = Modelo720Number(
+            result
+                .entries
+                .iter()
+                .map(|x| x.valoracion1.rounded_to_cents())
+                .sum::<Modelo720Number<15>>()
+                .0,
+        );
+        result.header.suma_valoracion2 = Modelo720Number(
+            result
+                .entries
+                .iter()
+                .map(|x| x.valoracion2.rounded_to_cents())
+                .sum::<Modelo720Number<15>>()
+                .0,
+        );
         result
     }
 

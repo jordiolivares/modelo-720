@@ -1,6 +1,5 @@
 use std::rc::Rc;
 
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
 use crate::modelo::{Modelo720Code, Registro2Modelo720, Shares};
@@ -20,20 +19,6 @@ pub trait AssetWithValuation {
 
     fn price_per_share(&self) -> Decimal {
         self.valuation() / self.shares().0
-    }
-
-    fn shares_as_cents(&self) -> i64 {
-        (self.shares().0 * Decimal::new(100, 0))
-            .round_dp_with_strategy(0, rust_decimal::RoundingStrategy::MidpointAwayFromZero)
-            .to_i64()
-            .unwrap()
-    }
-
-    fn valuation_as_cents(&self) -> i64 {
-        (self.valuation() * Decimal::new(100, 0))
-            .round_dp_with_strategy(0, rust_decimal::RoundingStrategy::MidpointAwayFromZero)
-            .to_i64()
-            .unwrap()
     }
 
     fn modelo_720_registro(&self, ejercicio: i16, nif: &str, name: &str) -> Registro2Modelo720 {
