@@ -345,6 +345,75 @@ impl Registro1Modelo720 {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum Modelo720Titularidad {
+    Titular,
+    Representate,
+    Autorizado,
+    Beneficiario,
+    Usufructuario,
+    Tomador,
+    ConPoderDisposicion,
+    Otros(String),
+}
+
+impl Serialize for Modelo720Titularidad {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Modelo720Titularidad::Titular => serializer.serialize_char('1'),
+            Modelo720Titularidad::Representate => serializer.serialize_char('2'),
+            Modelo720Titularidad::Autorizado => serializer.serialize_char('3'),
+            Modelo720Titularidad::Beneficiario => serializer.serialize_char('4'),
+            Modelo720Titularidad::Usufructuario => serializer.serialize_char('5'),
+            Modelo720Titularidad::Tomador => serializer.serialize_char('6'),
+            Modelo720Titularidad::ConPoderDisposicion => serializer.serialize_char('7'),
+            Modelo720Titularidad::Otros(what) => {
+                let serialized = format!("8{}", what.to_uppercase());
+                serializer.serialize_str(&serialized)
+            }
+        }
+    }
+}
+
+struct Modelo720TitularidadVisitor;
+
+impl<'de> Visitor<'de> for Modelo720TitularidadVisitor {
+    type Value = Modelo720Titularidad;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("Expected a valid ownership type")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        let (ownership_type, potential_str) = v.split_at(1);
+        match ownership_type {
+            "1" => Ok(Modelo720Titularidad::Titular),
+            "2" => Ok(Modelo720Titularidad::Representate),
+            "3" => Ok(Modelo720Titularidad::Autorizado),
+            "4" => Ok(Modelo720Titularidad::Beneficiario),
+            "5" => Ok(Modelo720Titularidad::Usufructuario),
+            "6" => Ok(Modelo720Titularidad::Tomador),
+            "7" => Ok(Modelo720Titularidad::ConPoderDisposicion),
+            "8" => Ok(Modelo720Titularidad::Otros(potential_str.to_string())),
+            _ => Err(E::custom("Invalid ownership type")),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Modelo720Titularidad {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(Modelo720TitularidadVisitor)
+    }
+}
 // TODO: Reorganize constructor so it is less reliant on magic chars
 #[derive(Clone, Deserialize, Serialize, Debug, FixedWidth)]
 pub struct Registro2Modelo720 {
@@ -372,14 +441,13 @@ pub struct Registro2Modelo720 {
     )]
     pub nombre: String,
 
-    #[fixed_width(name = "CLAVE DE CONDICIÓN DEL DECLARANTE", range = "75..76")]
-    pub clave_condicion_declarante: i8,
-
     #[fixed_width(
-        name = "TIPO DE TITULARIDAD SOBRE EL BIEN O DERECHO",
-        range = "76..101"
+        name = "CLAVE DE CONDICIÓN DEL DECLARANTE Y TIPO DE TITULARIDAD SOBRE EL BIEN O DERECHO",
+        range = "75..101",
+        pad_with = " ",
+        justify = "left"
     )]
-    pub tipo_titularidad: Option<String>,
+    pub tipo_titularidad: Modelo720Titularidad,
 
     #[fixed_width(name = "CLAVE TIPO DE BIEN O DERECHO", range = "101..102")]
     pub clave_tipo_bien: Option<char>,
@@ -508,8 +576,7 @@ impl Registro2Modelo720 {
             nif_declarado: nif.clone(),
             nif_representante_legal: None,
             nombre: nombre.clone(),
-            clave_condicion_declarante: 1,
-            tipo_titularidad: None,
+            tipo_titularidad: Modelo720Titularidad::Titular,
             clave_tipo_bien: None,
             subclave_tipo_bien: None,
             tipo_derecho_real_sobre_inmueble: None,
