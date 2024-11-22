@@ -19,9 +19,19 @@ struct FullJoinIterator<I: Iterator> {
     last_right: Option<I::Item>,
 }
 
+trait Keyed {
+    fn key<'a>(&'a self) -> &'a [u8];
+}
+
+impl<T: AssetWithValuation> Keyed for T {
+    fn key<'a>(&'a self) -> &'a [u8] {
+        self.isin().as_bytes()
+    }
+}
+
 impl<T, I: Iterator<Item = T>> FullJoinIterator<I>
 where
-    T: AssetWithValuation + Clone,
+    T: Keyed + Clone,
 {
     fn new(left: I, right: I) -> Self {
         FullJoinIterator {
@@ -42,7 +52,7 @@ enum JoinResult<I: Iterator> {
 
 impl<T, I: Iterator<Item = T>> Iterator for FullJoinIterator<I>
 where
-    T: AssetWithValuation + Clone,
+    T: Keyed + Clone,
 {
     type Item = JoinResult<I>;
 
@@ -63,10 +73,10 @@ where
                 Some(JoinResult::OuterLeft(left))
             }
             (Some(left), Some(right)) => {
-                if left.isin() < right.isin() {
+                if left.key() < right.key() {
                     self.last_left = self.left.next();
                     Some(JoinResult::OuterLeft(left))
-                } else if left.isin() == right.isin() {
+                } else if left.key() == right.key() {
                     self.last_left = self.left.next();
                     self.last_right = self.right.next();
                     Some(JoinResult::Inner(left, right))
