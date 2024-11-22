@@ -2,7 +2,9 @@ use std::rc::Rc;
 
 use rust_decimal::Decimal;
 
-use crate::modelo::{Modelo720Code, Registro2Modelo720, Shares};
+use crate::modelo::{
+    Modelo720Code, Modelo720TipoBien, Modelo720TipoValor, Registro2Modelo720, Shares,
+};
 
 pub struct AssetDifference {
     pub valuation: Decimal,
@@ -15,7 +17,7 @@ pub trait AssetWithValuation {
     fn shares(&self) -> Shares;
     fn country_of_deposit(&self) -> &str;
     fn description(&self) -> &str;
-    fn modelo_720_code(&self) -> Modelo720Code;
+    fn modelo_720_code(&self) -> Modelo720TipoBien;
 
     fn price_per_share(&self) -> Decimal {
         self.valuation() / self.shares().0
@@ -28,13 +30,11 @@ pub trait AssetWithValuation {
             name.to_string(),
             self.country_of_deposit().to_string(),
         );
-        let code = self.modelo_720_code();
         Registro2Modelo720 {
             clave_representacion_valores: Some('A'),
             clave_identificacion: Some(1),
             identificacion_valores: Some(self.isin().to_string()),
-            clave_tipo_bien: Some(code.code),
-            subclave_tipo_bien: Some(code.subcode),
+            tipo_bien: self.modelo_720_code(),
             identificacion_entidad: Some(self.description().to_uppercase()),
             codigo_pais_entidad: Some(self.isin()[..2].to_string()),
             origen_bien_derecho: Some('M'),
@@ -72,11 +72,8 @@ impl AssetWithValuation for Etf {
         &self.description
     }
 
-    fn modelo_720_code(&self) -> Modelo720Code {
-        Modelo720Code {
-            code: 'I',
-            subcode: 0,
-        }
+    fn modelo_720_code(&self) -> Modelo720TipoBien {
+        Modelo720TipoBien::AccionInstitucionInversionColectiva
     }
 }
 
@@ -128,11 +125,8 @@ impl AssetWithValuation for MintosNote {
         &self.description
     }
 
-    fn modelo_720_code(&self) -> Modelo720Code {
-        Modelo720Code {
-            code: 'V',
-            subcode: 2,
-        }
+    fn modelo_720_code(&self) -> Modelo720TipoBien {
+        Modelo720TipoBien::Valores(Modelo720TipoValor::CesionDeCapitalesATerceros)
     }
 }
 
@@ -157,7 +151,7 @@ impl AssetWithValuation for &'_ Rc<dyn AssetWithValuation> {
         self.as_ref().description()
     }
 
-    fn modelo_720_code(&self) -> Modelo720Code {
+    fn modelo_720_code(&self) -> Modelo720TipoBien {
         self.as_ref().modelo_720_code()
     }
 }

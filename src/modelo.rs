@@ -13,6 +13,153 @@ use serde::de::Visitor;
 use serde::{de, Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug)]
+pub enum Modelo720TipoCuenta {
+    Corriente,
+    Ahorro,
+    ImposicionAPlazo,
+    Credito,
+    Otra,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Modelo720TipoValor {
+    ParticipacionEnEntidadJuridica,
+    CesionDeCapitalesATerceros,
+    AportadosParaGestion,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Modelo720TipoSeguro {
+    DeVidaOInvalidez,
+    RentasTemporalesOVitalicias,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Modelo720TipoInmueble {
+    Titularidad,
+    DerechosDeUso,
+    NudaPropiedad,
+    Multipropiedad,
+    Otros,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Modelo720TipoBien {
+    Cuenta(Modelo720TipoCuenta),
+    Valores(Modelo720TipoValor),
+    AccionInstitucionInversionColectiva,
+    Seguro(Modelo720TipoSeguro),
+    BienInmbueble(Modelo720TipoInmueble),
+}
+
+impl Serialize for Modelo720TipoBien {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let string_representation = match self {
+            Modelo720TipoBien::Cuenta(modelo720_tipo_cuenta) => match modelo720_tipo_cuenta {
+                Modelo720TipoCuenta::Corriente => "C1",
+                Modelo720TipoCuenta::Ahorro => "C2",
+                Modelo720TipoCuenta::ImposicionAPlazo => "C3",
+                Modelo720TipoCuenta::Credito => "C4",
+                Modelo720TipoCuenta::Otra => "C5",
+            },
+            Modelo720TipoBien::Valores(modelo720_tipo_valor) => &{
+                match modelo720_tipo_valor {
+                    Modelo720TipoValor::ParticipacionEnEntidadJuridica => "V1",
+                    Modelo720TipoValor::CesionDeCapitalesATerceros => "V2",
+                    Modelo720TipoValor::AportadosParaGestion => "V3",
+                }
+            },
+            Modelo720TipoBien::AccionInstitucionInversionColectiva => "I0",
+            Modelo720TipoBien::Seguro(modelo720_tipo_seguro) => &{
+                match modelo720_tipo_seguro {
+                    Modelo720TipoSeguro::DeVidaOInvalidez => "S1",
+                    Modelo720TipoSeguro::RentasTemporalesOVitalicias => "S2",
+                }
+            },
+            Modelo720TipoBien::BienInmbueble(modelo720_tipo_inmueble) => {
+                match modelo720_tipo_inmueble {
+                    Modelo720TipoInmueble::Titularidad => "B1",
+                    Modelo720TipoInmueble::DerechosDeUso => "B2",
+                    Modelo720TipoInmueble::NudaPropiedad => "B3",
+                    Modelo720TipoInmueble::Multipropiedad => "B4",
+                    Modelo720TipoInmueble::Otros => "B5",
+                }
+            }
+        };
+        serializer.serialize_str(string_representation)
+    }
+}
+
+struct Modelo720TipoBienVisitor;
+
+impl<'de> Visitor<'de> for Modelo720TipoBienVisitor {
+    type Value = Modelo720TipoBien;
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        match v {
+            "C1" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Corriente)),
+            "C2" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Ahorro)),
+            "C3" => Ok(Modelo720TipoBien::Cuenta(
+                Modelo720TipoCuenta::ImposicionAPlazo,
+            )),
+            "C4" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Credito)),
+            "C5" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Otra)),
+            "V1" => Ok(Modelo720TipoBien::Valores(
+                Modelo720TipoValor::ParticipacionEnEntidadJuridica,
+            )),
+            "V2" => Ok(Modelo720TipoBien::Valores(
+                Modelo720TipoValor::CesionDeCapitalesATerceros,
+            )),
+            "V3" => Ok(Modelo720TipoBien::Valores(
+                Modelo720TipoValor::AportadosParaGestion,
+            )),
+            "I0" => Ok(Modelo720TipoBien::AccionInstitucionInversionColectiva),
+            "S1" => Ok(Modelo720TipoBien::Seguro(
+                Modelo720TipoSeguro::DeVidaOInvalidez,
+            )),
+            "S2" => Ok(Modelo720TipoBien::Seguro(
+                Modelo720TipoSeguro::DeVidaOInvalidez,
+            )),
+            "B1" => Ok(Modelo720TipoBien::BienInmbueble(
+                Modelo720TipoInmueble::Titularidad,
+            )),
+            "B2" => Ok(Modelo720TipoBien::BienInmbueble(
+                Modelo720TipoInmueble::DerechosDeUso,
+            )),
+            "B3" => Ok(Modelo720TipoBien::BienInmbueble(
+                Modelo720TipoInmueble::NudaPropiedad,
+            )),
+            "B4" => Ok(Modelo720TipoBien::BienInmbueble(
+                Modelo720TipoInmueble::Multipropiedad,
+            )),
+            "B5" => Ok(Modelo720TipoBien::BienInmbueble(
+                Modelo720TipoInmueble::Otros,
+            )),
+            _ => Err(E::invalid_value(de::Unexpected::Str(v), &self)),
+        }
+    }
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("Expected a valid type and subtype identifier for the asset")
+    }
+}
+
+impl<'de> Deserialize<'de> for Modelo720TipoBien {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(Modelo720TipoBienVisitor)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Modelo720Number<const NUMBERS: usize>(Decimal);
 
 impl<const N: usize> Modelo720Number<N> {
@@ -449,16 +596,8 @@ pub struct Registro2Modelo720 {
     )]
     pub tipo_titularidad: Modelo720Titularidad,
 
-    #[fixed_width(name = "CLAVE TIPO DE BIEN O DERECHO", range = "101..102")]
-    pub clave_tipo_bien: Option<char>,
-
-    #[fixed_width(
-        name = "SUBCLAVE DE BIEN O DERECHO",
-        range = "102..103",
-        justify = "right",
-        pad_with = "0"
-    )]
-    pub subclave_tipo_bien: Option<i8>,
+    #[fixed_width(name = "CLAVE Y SUBCLAVE TIPO DE BIEN O DERECHO", range = "101..103")]
+    pub tipo_bien: Modelo720TipoBien,
 
     #[fixed_width(name = "TIPO DE DERECHO REAL SOBRE INMUEBLE", range = "103..128")]
     pub tipo_derecho_real_sobre_inmueble: Option<String>,
@@ -577,8 +716,7 @@ impl Registro2Modelo720 {
             nif_representante_legal: None,
             nombre: nombre.clone(),
             tipo_titularidad: Modelo720Titularidad::Titular,
-            clave_tipo_bien: None,
-            subclave_tipo_bien: None,
+            tipo_bien: Modelo720TipoBien::AccionInstitucionInversionColectiva,
             tipo_derecho_real_sobre_inmueble: None,
             codigo_pais,
             clave_identificacion: None,
