@@ -561,6 +561,59 @@ impl<'de> Deserialize<'de> for Modelo720Titularidad {
         deserializer.deserialize_str(Modelo720TitularidadVisitor)
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+pub enum Modelo720Origen {
+    Adquisicion,
+    Modificacion,
+    Extincion,
+}
+
+impl Serialize for Modelo720Origen {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let code = match self {
+            Modelo720Origen::Adquisicion => 'A',
+            Modelo720Origen::Modificacion => 'M',
+            Modelo720Origen::Extincion => 'C',
+        };
+        serializer.serialize_char(code)
+    }
+}
+
+struct Modelo720OrigenVisitor;
+
+impl<'de> Visitor<'de> for Modelo720OrigenVisitor {
+    type Value = Modelo720Origen;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("Unexpected asset origin code, expected one of 'A', 'M', or 'C'")
+    }
+
+    fn visit_char<E>(self, v: char) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        match v {
+            'A' => Ok(Modelo720Origen::Adquisicion),
+            'M' => Ok(Modelo720Origen::Modificacion),
+            'C' => Ok(Modelo720Origen::Extincion),
+            _ => Err(E::invalid_value(de::Unexpected::Char(v), &self)),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Modelo720Origen {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        deserializer.deserialize_char(Modelo720OrigenVisitor)
+    }
+}
+
 // TODO: Reorganize constructor so it is less reliant on magic chars
 #[derive(Clone, Deserialize, Serialize, Debug, FixedWidth)]
 pub struct Registro2Modelo720 {
@@ -662,7 +715,7 @@ pub struct Registro2Modelo720 {
     pub fecha_incorporacion: Modelo720Date,
 
     #[fixed_width(name = "ORIGEN DEL BIEN O DERECHO", range = "422..423")]
-    pub origen_bien_derecho: Option<char>,
+    pub origen_bien_derecho: Modelo720Origen,
 
     // @FixedFormat(format = "yyyyMMdd")
     #[fixed_width(
@@ -733,7 +786,7 @@ impl Registro2Modelo720 {
             codigo_postal_entidad: None,
             codigo_pais_entidad: None,
             fecha_incorporacion: Modelo720Date(None),
-            origen_bien_derecho: None,
+            origen_bien_derecho: Modelo720Origen::Adquisicion,
             fecha_extincion: Modelo720Date(None),
             valoracion1: Modelo720Number(Decimal::ZERO),
             valoracion2: Modelo720Number(Decimal::ZERO),
@@ -833,9 +886,4 @@ impl Modelo720 {
         self.header.suma_valoracion2 += other.header.suma_valoracion2;
         self.entries.append(&mut other.entries);
     }
-}
-
-pub struct Modelo720Code {
-    pub code: char,
-    pub subcode: i8,
 }

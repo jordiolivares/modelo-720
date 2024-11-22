@@ -3,7 +3,7 @@ use std::rc::Rc;
 use rust_decimal::Decimal;
 
 use crate::modelo::{
-    Modelo720Code, Modelo720TipoBien, Modelo720TipoValor, Registro2Modelo720, Shares,
+    Modelo720Origen, Modelo720TipoBien, Modelo720TipoValor, Registro2Modelo720, Shares,
 };
 
 pub struct AssetDifference {
@@ -37,7 +37,7 @@ pub trait AssetWithValuation {
             tipo_bien: self.modelo_720_code(),
             identificacion_entidad: Some(self.description().to_uppercase()),
             codigo_pais_entidad: Some(self.isin()[..2].to_string()),
-            origen_bien_derecho: Some('M'),
+            origen_bien_derecho: Modelo720Origen::Modificacion,
             ..registro
         }
     }
