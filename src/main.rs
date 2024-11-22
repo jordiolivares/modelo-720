@@ -6,7 +6,7 @@ use std::{
 use clap::{command, Parser, Subcommand};
 use modelo_720_rust::{
     assets::{asset_difference, AssetWithValuation, Portfolio},
-    modelo::{Modelo720, Modelo720Origen, Shares},
+    modelo_720::{Modelo720, Origen, Shares},
     parsers::{parse_ibkr_statement, parse_mintos_statement, SupportedBrokers},
 };
 use rust_decimal::Decimal;
@@ -105,7 +105,7 @@ fn compute_modelo720(
         .flat_map(|change| match change {
             PortfolioChange::NewAcquisition(acquisition) => {
                 let mut registro = acquisition.modelo_720_registro(ejercicio, nif, name);
-                registro.origen_bien_derecho = Modelo720Origen::Adquisicion;
+                registro.origen_bien_derecho = Origen::Adquisicion;
                 registro.numero_valores = Some(acquisition.shares());
                 registro.valoracion1 = acquisition.valuation().into();
                 vec![registro]
@@ -117,13 +117,13 @@ fn compute_modelo720(
                 if diff.shares.0 > Decimal::ZERO {
                     // If we have more shares then we modify the value of what we have and add a new entry for the acquisition.
                     let mut previous_registro = old_value.modelo_720_registro(ejercicio, nif, name);
-                    previous_registro.origen_bien_derecho = Modelo720Origen::Modificacion;
+                    previous_registro.origen_bien_derecho = Origen::Modificacion;
                     previous_registro.numero_valores = Some(old_value.shares());
                     previous_registro.valoracion1 =
                         (old_value.shares().0 * current_price_per_share).into();
 
                     let mut new_registro = new_value.modelo_720_registro(ejercicio, nif, name);
-                    new_registro.origen_bien_derecho = Modelo720Origen::Adquisicion;
+                    new_registro.origen_bien_derecho = Origen::Adquisicion;
                     new_registro.numero_valores = Some(diff.shares);
                     new_registro.valoracion1 = (diff.shares.0 * current_price_per_share).into();
 
@@ -131,15 +131,15 @@ fn compute_modelo720(
                 } else if diff.shares.0 == Decimal::ZERO {
                     // If instead there are no new shares then we just revalue what we have.
                     let mut current_registro = new_value.modelo_720_registro(ejercicio, nif, name);
-                    current_registro.origen_bien_derecho = Modelo720Origen::Modificacion;
+                    current_registro.origen_bien_derecho = Origen::Modificacion;
                     vec![current_registro]
                 } else {
                     // If we have less shares then we revalue what remains and then add an entry for the sale. Total sales are already handled in registro2Sold.
                     let mut current_registro = new_value.modelo_720_registro(ejercicio, nif, name);
-                    current_registro.origen_bien_derecho = Modelo720Origen::Modificacion;
+                    current_registro.origen_bien_derecho = Origen::Modificacion;
 
                     let mut sale_registro = current_registro.clone();
-                    sale_registro.origen_bien_derecho = Modelo720Origen::Extincion;
+                    sale_registro.origen_bien_derecho = Origen::Extincion;
                     sale_registro.numero_valores = Some(Shares(diff.shares.0.abs()));
                     sale_registro.valoracion1 = (sale_registro.numero_valores.unwrap().0.abs()
                         * current_price_per_share)
@@ -149,7 +149,7 @@ fn compute_modelo720(
             }
             PortfolioChange::Sold(old_value) => {
                 let mut registro = old_value.modelo_720_registro(ejercicio, nif, name);
-                registro.origen_bien_derecho = Modelo720Origen::Extincion;
+                registro.origen_bien_derecho = Origen::Extincion;
                 registro.numero_valores = Some(old_value.shares());
                 vec![registro]
             }

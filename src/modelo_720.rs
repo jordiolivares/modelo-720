@@ -13,7 +13,7 @@ use serde::de::Visitor;
 use serde::{de, Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug)]
-pub enum Modelo720TipoCuenta {
+pub enum TipoCuenta {
     Corriente,
     Ahorro,
     ImposicionAPlazo,
@@ -22,20 +22,20 @@ pub enum Modelo720TipoCuenta {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Modelo720TipoValor {
+pub enum TipoValor {
     ParticipacionEnEntidadJuridica,
     CesionDeCapitalesATerceros,
     AportadosParaGestion,
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Modelo720TipoSeguro {
+pub enum TipoSeguro {
     DeVidaOInvalidez,
     RentasTemporalesOVitalicias,
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Modelo720TipoInmueble {
+pub enum TipoInmueble {
     Titularidad,
     DerechosDeUso,
     NudaPropiedad,
@@ -44,50 +44,48 @@ pub enum Modelo720TipoInmueble {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Modelo720TipoBien {
-    Cuenta(Modelo720TipoCuenta),
-    Valores(Modelo720TipoValor),
+pub enum TipoBien {
+    Cuenta(TipoCuenta),
+    Valores(TipoValor),
     AccionInstitucionInversionColectiva,
-    Seguro(Modelo720TipoSeguro),
-    BienInmbueble(Modelo720TipoInmueble),
+    Seguro(TipoSeguro),
+    BienInmbueble(TipoInmueble),
 }
 
-impl Serialize for Modelo720TipoBien {
+impl Serialize for TipoBien {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         let string_representation = match self {
-            Modelo720TipoBien::Cuenta(modelo720_tipo_cuenta) => match modelo720_tipo_cuenta {
-                Modelo720TipoCuenta::Corriente => "C1",
-                Modelo720TipoCuenta::Ahorro => "C2",
-                Modelo720TipoCuenta::ImposicionAPlazo => "C3",
-                Modelo720TipoCuenta::Credito => "C4",
-                Modelo720TipoCuenta::Otra => "C5",
+            TipoBien::Cuenta(modelo720_tipo_cuenta) => match modelo720_tipo_cuenta {
+                TipoCuenta::Corriente => "C1",
+                TipoCuenta::Ahorro => "C2",
+                TipoCuenta::ImposicionAPlazo => "C3",
+                TipoCuenta::Credito => "C4",
+                TipoCuenta::Otra => "C5",
             },
-            Modelo720TipoBien::Valores(modelo720_tipo_valor) => &{
+            TipoBien::Valores(modelo720_tipo_valor) => &{
                 match modelo720_tipo_valor {
-                    Modelo720TipoValor::ParticipacionEnEntidadJuridica => "V1",
-                    Modelo720TipoValor::CesionDeCapitalesATerceros => "V2",
-                    Modelo720TipoValor::AportadosParaGestion => "V3",
+                    TipoValor::ParticipacionEnEntidadJuridica => "V1",
+                    TipoValor::CesionDeCapitalesATerceros => "V2",
+                    TipoValor::AportadosParaGestion => "V3",
                 }
             },
-            Modelo720TipoBien::AccionInstitucionInversionColectiva => "I0",
-            Modelo720TipoBien::Seguro(modelo720_tipo_seguro) => &{
+            TipoBien::AccionInstitucionInversionColectiva => "I0",
+            TipoBien::Seguro(modelo720_tipo_seguro) => &{
                 match modelo720_tipo_seguro {
-                    Modelo720TipoSeguro::DeVidaOInvalidez => "S1",
-                    Modelo720TipoSeguro::RentasTemporalesOVitalicias => "S2",
+                    TipoSeguro::DeVidaOInvalidez => "S1",
+                    TipoSeguro::RentasTemporalesOVitalicias => "S2",
                 }
             },
-            Modelo720TipoBien::BienInmbueble(modelo720_tipo_inmueble) => {
-                match modelo720_tipo_inmueble {
-                    Modelo720TipoInmueble::Titularidad => "B1",
-                    Modelo720TipoInmueble::DerechosDeUso => "B2",
-                    Modelo720TipoInmueble::NudaPropiedad => "B3",
-                    Modelo720TipoInmueble::Multipropiedad => "B4",
-                    Modelo720TipoInmueble::Otros => "B5",
-                }
-            }
+            TipoBien::BienInmbueble(modelo720_tipo_inmueble) => match modelo720_tipo_inmueble {
+                TipoInmueble::Titularidad => "B1",
+                TipoInmueble::DerechosDeUso => "B2",
+                TipoInmueble::NudaPropiedad => "B3",
+                TipoInmueble::Multipropiedad => "B4",
+                TipoInmueble::Otros => "B5",
+            },
         };
         serializer.serialize_str(string_representation)
     }
@@ -96,51 +94,29 @@ impl Serialize for Modelo720TipoBien {
 struct Modelo720TipoBienVisitor;
 
 impl<'de> Visitor<'de> for Modelo720TipoBienVisitor {
-    type Value = Modelo720TipoBien;
+    type Value = TipoBien;
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
         match v {
-            "C1" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Corriente)),
-            "C2" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Ahorro)),
-            "C3" => Ok(Modelo720TipoBien::Cuenta(
-                Modelo720TipoCuenta::ImposicionAPlazo,
-            )),
-            "C4" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Credito)),
-            "C5" => Ok(Modelo720TipoBien::Cuenta(Modelo720TipoCuenta::Otra)),
-            "V1" => Ok(Modelo720TipoBien::Valores(
-                Modelo720TipoValor::ParticipacionEnEntidadJuridica,
-            )),
-            "V2" => Ok(Modelo720TipoBien::Valores(
-                Modelo720TipoValor::CesionDeCapitalesATerceros,
-            )),
-            "V3" => Ok(Modelo720TipoBien::Valores(
-                Modelo720TipoValor::AportadosParaGestion,
-            )),
-            "I0" => Ok(Modelo720TipoBien::AccionInstitucionInversionColectiva),
-            "S1" => Ok(Modelo720TipoBien::Seguro(
-                Modelo720TipoSeguro::DeVidaOInvalidez,
-            )),
-            "S2" => Ok(Modelo720TipoBien::Seguro(
-                Modelo720TipoSeguro::DeVidaOInvalidez,
-            )),
-            "B1" => Ok(Modelo720TipoBien::BienInmbueble(
-                Modelo720TipoInmueble::Titularidad,
-            )),
-            "B2" => Ok(Modelo720TipoBien::BienInmbueble(
-                Modelo720TipoInmueble::DerechosDeUso,
-            )),
-            "B3" => Ok(Modelo720TipoBien::BienInmbueble(
-                Modelo720TipoInmueble::NudaPropiedad,
-            )),
-            "B4" => Ok(Modelo720TipoBien::BienInmbueble(
-                Modelo720TipoInmueble::Multipropiedad,
-            )),
-            "B5" => Ok(Modelo720TipoBien::BienInmbueble(
-                Modelo720TipoInmueble::Otros,
-            )),
+            "C1" => Ok(TipoBien::Cuenta(TipoCuenta::Corriente)),
+            "C2" => Ok(TipoBien::Cuenta(TipoCuenta::Ahorro)),
+            "C3" => Ok(TipoBien::Cuenta(TipoCuenta::ImposicionAPlazo)),
+            "C4" => Ok(TipoBien::Cuenta(TipoCuenta::Credito)),
+            "C5" => Ok(TipoBien::Cuenta(TipoCuenta::Otra)),
+            "V1" => Ok(TipoBien::Valores(TipoValor::ParticipacionEnEntidadJuridica)),
+            "V2" => Ok(TipoBien::Valores(TipoValor::CesionDeCapitalesATerceros)),
+            "V3" => Ok(TipoBien::Valores(TipoValor::AportadosParaGestion)),
+            "I0" => Ok(TipoBien::AccionInstitucionInversionColectiva),
+            "S1" => Ok(TipoBien::Seguro(TipoSeguro::DeVidaOInvalidez)),
+            "S2" => Ok(TipoBien::Seguro(TipoSeguro::DeVidaOInvalidez)),
+            "B1" => Ok(TipoBien::BienInmbueble(TipoInmueble::Titularidad)),
+            "B2" => Ok(TipoBien::BienInmbueble(TipoInmueble::DerechosDeUso)),
+            "B3" => Ok(TipoBien::BienInmbueble(TipoInmueble::NudaPropiedad)),
+            "B4" => Ok(TipoBien::BienInmbueble(TipoInmueble::Multipropiedad)),
+            "B5" => Ok(TipoBien::BienInmbueble(TipoInmueble::Otros)),
             _ => Err(E::invalid_value(de::Unexpected::Str(v), &self)),
         }
     }
@@ -150,7 +126,7 @@ impl<'de> Visitor<'de> for Modelo720TipoBienVisitor {
     }
 }
 
-impl<'de> Deserialize<'de> for Modelo720TipoBien {
+impl<'de> Deserialize<'de> for TipoBien {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -160,32 +136,32 @@ impl<'de> Deserialize<'de> for Modelo720TipoBien {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Modelo720Number<const NUMBERS: usize>(Decimal);
+pub struct FixedWidthNumber<const NUMBERS: usize>(Decimal);
 
-impl<const N: usize> Modelo720Number<N> {
+impl<const N: usize> FixedWidthNumber<N> {
     pub fn rounded_to_cents(&self) -> Self {
-        Modelo720Number(
+        FixedWidthNumber(
             self.0
                 .round_dp_with_strategy(2, rust_decimal::RoundingStrategy::MidpointAwayFromZero),
         )
     }
 }
 
-impl<const N: usize> From<Decimal> for Modelo720Number<N> {
+impl<const N: usize> From<Decimal> for FixedWidthNumber<N> {
     fn from(value: Decimal) -> Self {
         Self(value)
     }
 }
 
-impl<const N: usize> AddAssign for Modelo720Number<N> {
+impl<const N: usize> AddAssign for FixedWidthNumber<N> {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0
     }
 }
 
-impl<const N: usize> Sum for Modelo720Number<N> {
+impl<const N: usize> Sum for FixedWidthNumber<N> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        let mut res = Modelo720Number(Decimal::ZERO);
+        let mut res = FixedWidthNumber(Decimal::ZERO);
         for x in iter {
             res += x;
         }
@@ -193,7 +169,7 @@ impl<const N: usize> Sum for Modelo720Number<N> {
     }
 }
 
-impl<const N: usize> Serialize for Modelo720Number<N> {
+impl<const N: usize> Serialize for FixedWidthNumber<N> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -212,10 +188,10 @@ impl<const N: usize> Serialize for Modelo720Number<N> {
     }
 }
 
-struct Modelo720NumberVisitor<const N: usize>;
+struct FixedWidthNumberVisitor<const N: usize>;
 
-impl<'de, const N: usize> Visitor<'de> for Modelo720NumberVisitor<N> {
-    type Value = Modelo720Number<N>;
+impl<'de, const N: usize> Visitor<'de> for FixedWidthNumberVisitor<N> {
+    type Value = FixedWidthNumber<N>;
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
@@ -232,7 +208,7 @@ impl<'de, const N: usize> Visitor<'de> for Modelo720NumberVisitor<N> {
         let res = decimal
             .map(|n| if sign == " " { n } else { -n })
             .map(|n| n / Decimal::from(100))
-            .map(Modelo720Number);
+            .map(FixedWidthNumber);
         res.map_err(|e| de::Error::custom(e.to_string()))
     }
 
@@ -241,12 +217,12 @@ impl<'de, const N: usize> Visitor<'de> for Modelo720NumberVisitor<N> {
     }
 }
 
-impl<'de, const N: usize> Deserialize<'de> for Modelo720Number<N> {
+impl<'de, const N: usize> Deserialize<'de> for FixedWidthNumber<N> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        let visitor: Modelo720NumberVisitor<N> = Modelo720NumberVisitor;
+        let visitor: FixedWidthNumberVisitor<N> = FixedWidthNumberVisitor;
         deserializer.deserialize_str(visitor)
     }
 }
@@ -351,9 +327,9 @@ impl<'de> Deserialize<'de> for Shares {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Modelo720Date(pub Option<NaiveDate>);
+pub struct Date(pub Option<NaiveDate>);
 
-impl Serialize for Modelo720Date {
+impl Serialize for Date {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -365,20 +341,20 @@ impl Serialize for Modelo720Date {
     }
 }
 
-impl<'de> Deserialize<'de> for Modelo720Date {
+impl<'de> Deserialize<'de> for Date {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         deserializer
-            .deserialize_str(Modelo720DateVisitor)
-            .map(|date| Modelo720Date(date))
+            .deserialize_str(DateVisitor)
+            .map(|date| Date(date))
     }
 }
 
-struct Modelo720DateVisitor;
+struct DateVisitor;
 
-impl<'de> Visitor<'de> for Modelo720DateVisitor {
+impl<'de> Visitor<'de> for DateVisitor {
     type Value = Option<NaiveDate>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -401,7 +377,7 @@ impl<'de> Visitor<'de> for Modelo720DateVisitor {
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug, FixedWidth)]
-pub struct Registro1Modelo720 {
+pub struct Registro1 {
     #[fixed_width(range = "0..1")]
     tipo: i8,
 
@@ -460,18 +436,18 @@ pub struct Registro1Modelo720 {
     numero_registros_tipo2: usize,
 
     #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 1", range = "144..162")]
-    suma_valoracion1: Modelo720Number<{ 162 - 144 }>,
+    suma_valoracion1: FixedWidthNumber<{ 162 - 144 }>,
 
     #[fixed_width(name = "SUMA TOTAL DE VALORACIÓN 2", range = "162..180")]
-    suma_valoracion2: Modelo720Number<{ 180 - 162 }>,
+    suma_valoracion2: FixedWidthNumber<{ 180 - 162 }>,
 
     #[fixed_width(name = "BLANCOS", range = "180..500")]
     blancos: String,
 }
 
-impl Registro1Modelo720 {
+impl Registro1 {
     fn new(ejercicio: i16, nif: String, nombre: String, telefono: i64) -> Self {
-        Registro1Modelo720 {
+        Registro1 {
             tipo: 1,
             modelo_declaracion: 720,
             ejercicio: ejercicio,
@@ -485,15 +461,15 @@ impl Registro1Modelo720 {
             declaracion_sustitutiva: None,
             id_declaracion_anterior: None,
             numero_registros_tipo2: 0,
-            suma_valoracion1: Modelo720Number(Decimal::ZERO),
-            suma_valoracion2: Modelo720Number(Decimal::ZERO),
+            suma_valoracion1: FixedWidthNumber(Decimal::ZERO),
+            suma_valoracion2: FixedWidthNumber(Decimal::ZERO),
             blancos: String::default(),
         }
     }
 }
 
 #[derive(Clone, Debug)]
-pub enum Modelo720Titularidad {
+pub enum Titularidad {
     Titular,
     Representate,
     Autorizado,
@@ -504,20 +480,20 @@ pub enum Modelo720Titularidad {
     Otros(String),
 }
 
-impl Serialize for Modelo720Titularidad {
+impl Serialize for Titularidad {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         match self {
-            Modelo720Titularidad::Titular => serializer.serialize_char('1'),
-            Modelo720Titularidad::Representate => serializer.serialize_char('2'),
-            Modelo720Titularidad::Autorizado => serializer.serialize_char('3'),
-            Modelo720Titularidad::Beneficiario => serializer.serialize_char('4'),
-            Modelo720Titularidad::Usufructuario => serializer.serialize_char('5'),
-            Modelo720Titularidad::Tomador => serializer.serialize_char('6'),
-            Modelo720Titularidad::ConPoderDisposicion => serializer.serialize_char('7'),
-            Modelo720Titularidad::Otros(what) => {
+            Titularidad::Titular => serializer.serialize_char('1'),
+            Titularidad::Representate => serializer.serialize_char('2'),
+            Titularidad::Autorizado => serializer.serialize_char('3'),
+            Titularidad::Beneficiario => serializer.serialize_char('4'),
+            Titularidad::Usufructuario => serializer.serialize_char('5'),
+            Titularidad::Tomador => serializer.serialize_char('6'),
+            Titularidad::ConPoderDisposicion => serializer.serialize_char('7'),
+            Titularidad::Otros(what) => {
                 let serialized = format!("8{}", what.to_uppercase());
                 serializer.serialize_str(&serialized)
             }
@@ -525,10 +501,10 @@ impl Serialize for Modelo720Titularidad {
     }
 }
 
-struct Modelo720TitularidadVisitor;
+struct TitularidadVisitor;
 
-impl<'de> Visitor<'de> for Modelo720TitularidadVisitor {
-    type Value = Modelo720Titularidad;
+impl<'de> Visitor<'de> for TitularidadVisitor {
+    type Value = Titularidad;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("Expected a valid ownership type")
@@ -540,53 +516,53 @@ impl<'de> Visitor<'de> for Modelo720TitularidadVisitor {
     {
         let (ownership_type, potential_str) = v.split_at(1);
         match ownership_type {
-            "1" => Ok(Modelo720Titularidad::Titular),
-            "2" => Ok(Modelo720Titularidad::Representate),
-            "3" => Ok(Modelo720Titularidad::Autorizado),
-            "4" => Ok(Modelo720Titularidad::Beneficiario),
-            "5" => Ok(Modelo720Titularidad::Usufructuario),
-            "6" => Ok(Modelo720Titularidad::Tomador),
-            "7" => Ok(Modelo720Titularidad::ConPoderDisposicion),
-            "8" => Ok(Modelo720Titularidad::Otros(potential_str.to_string())),
+            "1" => Ok(Titularidad::Titular),
+            "2" => Ok(Titularidad::Representate),
+            "3" => Ok(Titularidad::Autorizado),
+            "4" => Ok(Titularidad::Beneficiario),
+            "5" => Ok(Titularidad::Usufructuario),
+            "6" => Ok(Titularidad::Tomador),
+            "7" => Ok(Titularidad::ConPoderDisposicion),
+            "8" => Ok(Titularidad::Otros(potential_str.to_string())),
             _ => Err(E::custom("Invalid ownership type")),
         }
     }
 }
 
-impl<'de> Deserialize<'de> for Modelo720Titularidad {
+impl<'de> Deserialize<'de> for Titularidad {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        deserializer.deserialize_str(Modelo720TitularidadVisitor)
+        deserializer.deserialize_str(TitularidadVisitor)
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Modelo720Origen {
+pub enum Origen {
     Adquisicion,
     Modificacion,
     Extincion,
 }
 
-impl Serialize for Modelo720Origen {
+impl Serialize for Origen {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         let code = match self {
-            Modelo720Origen::Adquisicion => 'A',
-            Modelo720Origen::Modificacion => 'M',
-            Modelo720Origen::Extincion => 'C',
+            Origen::Adquisicion => 'A',
+            Origen::Modificacion => 'M',
+            Origen::Extincion => 'C',
         };
         serializer.serialize_char(code)
     }
 }
 
-struct Modelo720OrigenVisitor;
+struct OrigenVisitor;
 
-impl<'de> Visitor<'de> for Modelo720OrigenVisitor {
-    type Value = Modelo720Origen;
+impl<'de> Visitor<'de> for OrigenVisitor {
+    type Value = Origen;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("Unexpected asset origin code, expected one of 'A', 'M', or 'C'")
@@ -597,26 +573,26 @@ impl<'de> Visitor<'de> for Modelo720OrigenVisitor {
         E: de::Error,
     {
         match v {
-            'A' => Ok(Modelo720Origen::Adquisicion),
-            'M' => Ok(Modelo720Origen::Modificacion),
-            'C' => Ok(Modelo720Origen::Extincion),
+            'A' => Ok(Origen::Adquisicion),
+            'M' => Ok(Origen::Modificacion),
+            'C' => Ok(Origen::Extincion),
             _ => Err(E::invalid_value(de::Unexpected::Char(v), &self)),
         }
     }
 }
 
-impl<'de> Deserialize<'de> for Modelo720Origen {
+impl<'de> Deserialize<'de> for Origen {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        deserializer.deserialize_char(Modelo720OrigenVisitor)
+        deserializer.deserialize_char(OrigenVisitor)
     }
 }
 
 // TODO: Reorganize constructor so it is less reliant on magic chars
 #[derive(Clone, Deserialize, Serialize, Debug, FixedWidth)]
-pub struct Registro2Modelo720 {
+pub struct Registro2 {
     #[fixed_width(range = "0..1")]
     pub tipo: i8,
 
@@ -647,10 +623,10 @@ pub struct Registro2Modelo720 {
         pad_with = " ",
         justify = "left"
     )]
-    pub tipo_titularidad: Modelo720Titularidad,
+    pub tipo_titularidad: Titularidad,
 
     #[fixed_width(name = "CLAVE Y SUBCLAVE TIPO DE BIEN O DERECHO", range = "101..103")]
-    pub tipo_bien: Modelo720TipoBien,
+    pub tipo_bien: TipoBien,
 
     #[fixed_width(name = "TIPO DE DERECHO REAL SOBRE INMUEBLE", range = "103..128")]
     pub tipo_derecho_real_sobre_inmueble: Option<String>,
@@ -712,10 +688,10 @@ pub struct Registro2Modelo720 {
         justify = "right",
         pad_with = "0"
     )]
-    pub fecha_incorporacion: Modelo720Date,
+    pub fecha_incorporacion: Date,
 
     #[fixed_width(name = "ORIGEN DEL BIEN O DERECHO", range = "422..423")]
-    pub origen_bien_derecho: Modelo720Origen,
+    pub origen_bien_derecho: Origen,
 
     // @FixedFormat(format = "yyyyMMdd")
     #[fixed_width(
@@ -724,13 +700,13 @@ pub struct Registro2Modelo720 {
         justify = "right",
         pad_with = "0"
     )]
-    pub fecha_extincion: Modelo720Date,
+    pub fecha_extincion: Date,
 
     #[fixed_width(name = "Valoracion 1", range = "431..446")]
-    pub valoracion1: Modelo720Number<{ 446 - 431 }>,
+    pub valoracion1: FixedWidthNumber<{ 446 - 431 }>,
 
     #[fixed_width(name = "Valoracion 2", range = "446..461")]
-    pub valoracion2: Modelo720Number<{ 461 - 446 }>,
+    pub valoracion2: FixedWidthNumber<{ 461 - 446 }>,
 
     #[fixed_width(name = "CLAVE DE REPRESENTACIÓN DE VALORES", range = "461..462")]
     pub clave_representacion_valores: Option<char>,
@@ -758,9 +734,9 @@ pub struct Registro2Modelo720 {
     pub blancos: String,
 }
 
-impl Registro2Modelo720 {
+impl Registro2 {
     pub fn new(ejercicio: i16, nif: String, nombre: String, codigo_pais: String) -> Self {
-        Registro2Modelo720 {
+        Registro2 {
             tipo: 2,
             modelo_declaracion: 720,
             ejercicio: ejercicio,
@@ -768,8 +744,8 @@ impl Registro2Modelo720 {
             nif_declarado: nif.clone(),
             nif_representante_legal: None,
             nombre: nombre.clone(),
-            tipo_titularidad: Modelo720Titularidad::Titular,
-            tipo_bien: Modelo720TipoBien::AccionInstitucionInversionColectiva,
+            tipo_titularidad: Titularidad::Titular,
+            tipo_bien: TipoBien::AccionInstitucionInversionColectiva,
             tipo_derecho_real_sobre_inmueble: None,
             codigo_pais,
             clave_identificacion: None,
@@ -785,11 +761,11 @@ impl Registro2Modelo720 {
             provincia_entidad: None,
             codigo_postal_entidad: None,
             codigo_pais_entidad: None,
-            fecha_incorporacion: Modelo720Date(None),
-            origen_bien_derecho: Modelo720Origen::Adquisicion,
-            fecha_extincion: Modelo720Date(None),
-            valoracion1: Modelo720Number(Decimal::ZERO),
-            valoracion2: Modelo720Number(Decimal::ZERO),
+            fecha_incorporacion: Date(None),
+            origen_bien_derecho: Origen::Adquisicion,
+            fecha_extincion: Date(None),
+            valoracion1: FixedWidthNumber(Decimal::ZERO),
+            valoracion2: FixedWidthNumber(Decimal::ZERO),
             clave_representacion_valores: None,
             numero_valores: None,
             clave_tipo_bien_inmueble: None,
@@ -802,8 +778,8 @@ impl Registro2Modelo720 {
 #[derive(Debug)]
 pub struct Modelo720 {
     // TODO: These should definitely be private
-    pub header: Registro1Modelo720,
-    pub entries: Vec<Registro2Modelo720>,
+    pub header: Registro1,
+    pub entries: Vec<Registro2>,
 }
 
 impl Modelo720 {
@@ -812,32 +788,27 @@ impl Modelo720 {
         nif: &str,
         nombre: &str,
         telefono: i64,
-        entries: Vec<Registro2Modelo720>,
+        entries: Vec<Registro2>,
     ) -> Modelo720 {
         let mut result = Modelo720 {
-            header: Registro1Modelo720::new(
-                ejercicio,
-                nif.to_string(),
-                nombre.to_string(),
-                telefono,
-            ),
+            header: Registro1::new(ejercicio, nif.to_string(), nombre.to_string(), telefono),
             entries,
         };
         result.header.numero_registros_tipo2 = result.entries.len();
-        result.header.suma_valoracion1 = Modelo720Number(
+        result.header.suma_valoracion1 = FixedWidthNumber(
             result
                 .entries
                 .iter()
                 .map(|x| x.valoracion1.rounded_to_cents())
-                .sum::<Modelo720Number<15>>()
+                .sum::<FixedWidthNumber<15>>()
                 .0,
         );
-        result.header.suma_valoracion2 = Modelo720Number(
+        result.header.suma_valoracion2 = FixedWidthNumber(
             result
                 .entries
                 .iter()
                 .map(|x| x.valoracion2.rounded_to_cents())
-                .sum::<Modelo720Number<15>>()
+                .sum::<FixedWidthNumber<15>>()
                 .0,
         );
         result
@@ -852,7 +823,7 @@ impl Modelo720 {
         let header = actual_reader
             .next()
             .and_then(|x| fixed_width::from_bytes(&x.unwrap()).ok());
-        let mut tipo_2_entries: Vec<Registro2Modelo720> = Vec::new();
+        let mut tipo_2_entries: Vec<Registro2> = Vec::new();
         while let Some(entry) = actual_reader.next() {
             let entry_tipo_2 = entry
                 .ok()
