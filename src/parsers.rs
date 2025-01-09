@@ -47,12 +47,35 @@ struct MintosStatementEntry {
     pending_principal: Decimal,
 }
 
+#[derive(Debug, Deserialize, PartialEq)]
+enum PaymentType {
+    #[serde(rename = "Principal received")]
+    #[serde(alias = "Capital recibido")]
+    #[serde(alias = "Ingresos del principal recibidos por la recompra del préstamo")]
+    #[serde(alias = "Principal recibido por la recompra de partes pequeñas de préstamos")]
+    #[serde(alias = "Principal received from loan repurchase")]
+    #[serde(alias = "Principal received from repurchase of small loan parts")]
+    PrincipalReceived,
+    #[serde(rename = "Investment")]
+    Investment,
+    #[serde(rename = "Secondary market transaction")]
+    #[serde(alias = "Operación del Mercado Secundario")]
+    SecondaryMarketTransaction,
+    #[serde(untagged)]
+    Unknown(String),
+}
+
 #[derive(Debug, Deserialize)]
 struct MintosActivityStatementEntry {
     #[serde(rename = "Details")]
+    #[serde(alias = "Detalles")]
     details: String,
     #[serde(rename = "Turnover")]
+    #[serde(alias = "Volumen de negocios")]
     turnover: Decimal,
+    #[serde(rename = "Payment Type")]
+    #[serde(alias = "Tipo de pago")]
+    payment_type: PaymentType,
 }
 
 impl MintosActivityStatementEntry {
@@ -76,6 +99,10 @@ pub fn parse_mintos_statement_with_reverted_changes(
     let mut reader = csv::Reader::from_path(activity_statement_path)?;
     for row in reader.deserialize() {
         let parsed: MintosActivityStatementEntry = row?;
+        match parsed.payment_type {
+            PaymentType::Unknown(_) => continue, // We ignore activity that doesn't affect the principal.
+            _ => {}
+        };
         let isin = match parsed.isin() {
             Some(x) => x,
             None => continue, // This is a legacy loan without ISIN, as such it can be ignored.
