@@ -31,7 +31,7 @@ pub fn parse_ibkr_statement(path: &Path) -> std::io::Result<Portfolio> {
             isin: ibkr_entry.isin,
             euro_valuation: ibkr_entry.position_value,
             shares: ibkr_entry.quantity,
-            deposit_country: "US".to_string(),
+            deposit_country: "IE".to_string(),
             description: ibkr_entry.description,
         }));
     }
