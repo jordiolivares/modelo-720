@@ -1,6 +1,9 @@
+> [!CAUTION]
+> DISCLAIMER: This is a tool to be run at your own risk, I'm not responsible for any harm done to yourself using it if the AEAT comes after you
+
 # Modelo 720 tools
 This project contains a CLI utility that generates the necessary Modelo 720 files that the Spanish Tax Agency (Hacienda) requires every year containing the portfolio of assets contained outside of Spain.
-This was created mostly as a necessity due to Minots moving to use ISIN codes for their Notes, which resulted in entirely too many entries to handle manually.
+This was created mostly as a necessity due to Mintos moving to use ISIN codes for their Notes, which resulted in entirely too many entries to handle manually.
 
 ## Supported brokers
 Right now the tool only supports two brokers, each defining their input set of files:
