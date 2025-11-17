@@ -1,0 +1,3 @@
+# This is actually hardcoded to the devcontainer docker image path for the Android NDK
+[target.aarch64-linux-android]
+linker = "/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang"
