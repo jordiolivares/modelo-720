@@ -167,6 +167,7 @@ fn compute_modelo720(
                 let mut registro = old_value.modelo_720_registro(ejercicio, nif, name);
                 registro.origen_bien_derecho = Origen::Extincion;
                 registro.numero_valores = Some(old_value.shares());
+                registro.valoracion1 = old_value.valuation().into();
                 vec![registro]
             }
         })
