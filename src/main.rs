@@ -142,11 +142,17 @@ fn compute_modelo720(
                     // If instead there are no new shares then we just revalue what we have.
                     let mut current_registro = new_value.modelo_720_registro(ejercicio, nif, name);
                     current_registro.origen_bien_derecho = Origen::Modificacion;
+                    current_registro.numero_valores = Some(new_value.shares());
+                    current_registro.valoracion1 =
+                        (new_value.shares().0 * current_price_per_share).into();
                     vec![current_registro]
                 } else {
                     // If we have less shares then we revalue what remains and then add an entry for the sale. Total sales are already handled in registro2Sold.
                     let mut current_registro = new_value.modelo_720_registro(ejercicio, nif, name);
                     current_registro.origen_bien_derecho = Origen::Modificacion;
+                    current_registro.numero_valores = Some(new_value.shares());
+                    current_registro.valoracion1 =
+                        (new_value.shares().0 * current_price_per_share).into();
 
                     let mut sale_registro = current_registro.clone();
                     sale_registro.origen_bien_derecho = Origen::Extincion;
